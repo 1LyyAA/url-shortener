@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>URL Shortener</title>
+</head>
+<body>
+    <h1>Shorten URL</h1>
+
+    <p>
+        После сокращения ссылки используйте короткий URL для перехода
+    </p>
+
+    <form id="shortenForm">
+        <input type="text" id="urlInput" name="url" placeholder="Enter URL" style="width:300px" />
+        <button type="submit">Shorten</button>
+    </form>
+
+    <pre id="output"></pre>
+
+    <script>
+        document.getElementById("shortenForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const url = document.getElementById("urlInput").value;
+
+            const response = await fetch("/shorten", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ url: url })
+            });
+
+            const res = await response.json();
+
+            // Используем short_url из ответа сервера
+            document.getElementById("output").innerText =
+                `Original URL:   ${res.url}\n` +
+                `Short URL:      ${res.short_url}\n` +
+                `Key:            ${res.key}`;
+        });
+    </script>
+</body>
+</html>
