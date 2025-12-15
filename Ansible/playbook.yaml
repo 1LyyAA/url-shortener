@@ -1,0 +1,45 @@
+---
+
+- name: Deploy url-shortener 
+  hosts: app-server
+  become: true
+  vars:
+    app_dir: /opt/go-app
+  tasks:
+    - name: Stop existing application
+      shell: pkill -f "{{ app_dir }}/app" || true
+      ignore_errors: true
+
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: admin
+        group: admin
+        mode: '0755'
+
+    - name: Remove old app directory if exists
+      file:
+        path: "{{ app_dir }}/app"
+        state: absent
+
+    - name: Copy application executable
+      copy:
+        src: "{{ playbook_dir }}/../app/urlshortener"
+        dest: "{{ app_dir }}/app"
+        mode: '0755'
+        
+    - name: Copy index.html
+      copy:
+        src: "{{ playbook_dir }}/../app/index.html"
+        dest: "{{ app_dir }}/index.html"
+        mode: '0644'
+      ignore_errors: true
+
+    - name: Run application
+      shell: |
+        cd {{ app_dir }}
+        DB_HOST=url-shortener-app-db-1 nohup {{ app_dir }}/app > /tmp/app.log 2>&1 &
+        sleep 2
+        echo "Application started"
+

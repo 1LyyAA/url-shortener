@@ -1,36 +1,108 @@
 services:
-  urlshortener:
-    image: daylak/urlshortener
+  # PostgreSQL для SonarQube
+  sonarqube-db:
+    image: postgres:15-alpine
     environment:
-      - DB_HOST=db        # вместо localhost
-      - DB_PORT=5432
-      - DB_USER=admin
-      - DB_PASSWORD=admin
-      - DB_NAME=db
-    
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - sonarqube_db:/var/lib/postgresql/data
     networks:
-      - default
+      - cicd_net
+
+  # SonarQube для анализа кода
+  sonarqube:
+    image: sonarqube:community
+    depends_on:
+      - sonarqube-db
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    ports:
+      - "9000:9000"
+    networks:
+      - cicd_net
+
+  # Nexus для хранения артефактов
+  nexus:
+    image: sonatype/nexus3:latest
+    container_name: nexus
+    volumes:
+      - nexus_data:/nexus-data
+    ports:
+      - "8081:8081"
+    environment:
+      - INSTALL4J_ADD_VM_PARAMS=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=273m
+    networks:
+      - cicd_net
+
+  # Jenkins для CI/CD
+  jenkins:
+    build: ./jenkins
+    container_name: jenkins
+    privileged: true
+    user: root
     ports:
       - "8080:8080"
-
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./Ansible:/ansible
+      - ./src:/workspace
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    networks:
+      - cicd_net
     depends_on:
-      - db
-  db:
+      - nexus
+      - sonarqube
+
+  # App Server - целевой сервер для деплоя
+  app-server:
+    build: ./server
+    container_name: app-server
+    hostname: app-server
+    tty: true
+    stdin_open: true
+    volumes:
+      - app_data:/opt/go-app
+    ports:
+      - "8082:8080"
+      - "2222:22"
+    networks:
+      - cicd_net
+
+  # PostgreSQL для приложения (если нужно для тестов)
+  app-db:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: db
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - app_db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
-      - default
+      - cicd_net
 
 networks:
-  default:
+  cicd_net:
     driver: bridge
 
 volumes:
-  db_data:
+  jenkins_home:
+  nexus_data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  sonarqube_db:
+  app_data:
+  app_db_data:

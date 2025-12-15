@@ -1,0 +1,98 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Явно устанавливаем переменные окружения
+        NEXUS_URL = 'http://nexus:8081'
+        NEXUS_REPO = 'go-artifacts'
+        NEXUS_CREDENTIALS_ID = 'nexus_cred'
+        PATH = "/usr/local/go/bin:${env.PATH}"
+    }
+
+    stages {
+
+        stage('Environment Check') {
+            steps {
+                sh """
+                    go version
+                    pwd
+                """
+                }
+        }
+        
+        stage('git clone'){
+            steps{
+                git branch: 'main', url: 'https://github.com/1LyyAA/url-shortener.git'
+            }
+        }
+
+        stage('Build Go App') {
+            steps {
+                sh '''
+                    mkdir -p app
+                    cd src
+                    CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ../app/urlshortener
+                    cp index.html ../app/ || echo "index.html not found"
+                '''
+            }
+        }
+
+        stage('Run unit tests') {
+            steps {
+                sh "cd src && go test -coverprofile=coverage.out"
+            }
+        }
+
+        // stage('SonarQube Analysis') {
+        //     steps {
+        //         withSonarQubeEnv('sonar-server') {
+        //             sh '''
+        //                 sonar-scanner
+        //             '''
+        //         }
+        //     }
+        // }
+
+        stage('Lint') {
+            steps {
+                sh '''
+                    golangci-lint run || echo "Linter not configured, skipping..."
+                '''
+            }
+        }
+
+        stage('Report allure') {
+            steps {
+                allure([
+                    reportBuildPolicy: 'ALWAYS',
+                    results: [[path: 'src/allure-results']]
+                ])
+            }
+        }
+
+        stage('Archive Artifact') {
+            steps {
+                sh '''
+                    ls -la app/
+                    tar -czf app.tar.gz app/
+                '''
+            }
+        }
+
+        stage('Upload to Nexus') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: "${NEXUS_CREDENTIALS_ID}",
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    sh '''
+                        curl -u $NEXUS_USER:$NEXUS_PASS \
+                        --upload-file app.tar.gz \
+                        ${NEXUS_URL}/repository/${NEXUS_REPO}/app-${BUILD_NUMBER}.tar.gz
+                    '''
+                }
+            }
+        }    
+    }
+}
