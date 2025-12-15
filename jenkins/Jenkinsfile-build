@@ -32,6 +32,7 @@ pipeline {
                     mkdir -p app
                     cd src
                     go build -o ../app/urlshortener
+                    cp index.html ../app/ || echo "index.html not found"
                 '''
             }
         }
