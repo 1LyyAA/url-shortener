@@ -16,8 +16,8 @@
 
     - name: Copy application files
       copy:
-        src: "{{ playbook_dir }}/../app/"
-        dest: "{{ app_dir }}/"
+        src: "{{ playbook_dir }}/../app"
+        dest: "{{ app_dir }}/app"
         mode: '0755'
 
     - name: Set executable permissions

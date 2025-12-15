@@ -14,7 +14,6 @@ pipeline {
     }
 
     stages {
-
         stage('Download from Nexus') {
             steps {
                 withCredentials([usernamePassword(
