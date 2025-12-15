@@ -29,6 +29,7 @@ pipeline {
         stage('Build Go App') {
             steps {
                 sh '''
+                    mkdir -p app
                     cd src
                     go build -o ../app/urlshortener
                 '''
@@ -63,9 +64,8 @@ pipeline {
         stage('Archive Artifact') {
             steps {
                 sh '''
-                    mkdir -p app
-                    cp src/urlshortener app/ || true
-                    tar -czf app.tar.gz app
+                    ls -la app/
+                    tar -czf app.tar.gz app/
                 '''
             }
         }
