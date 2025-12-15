@@ -1,5 +1,5 @@
-[app_server]
-App_server ansible_host=python-app ansible_ssh_user=admin ansible_ssh_pass=securepassword ansible_become_password=securepassword
+[app-server]
+app-server ansible_host=app-server ansible_ssh_user=admin ansible_ssh_pass=securepassword ansible_become_password=securepassword
 
 [all:vars]
 ansible_connection=ssh
