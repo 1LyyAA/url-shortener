@@ -43,24 +43,24 @@ pipeline {
             }
         }
 
-        // stage('SonarQube Analysis') {
-        //     steps {
-        //         withSonarQubeEnv('sonar-server') {
-        //             sh '''
-        //                 sonar-scanner
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar-server') {
+                    sh '''
+                        sonar-scanner
+                    '''
+                }
+            }
+        }
 
-        // stage('Report allure') {
-        //     steps {
-        //         allure([
-        //             reportBuildPolicy: 'ALWAYS',
-        //             results: [[path: 'src/allure-results']]
-        //         ])
-        //     }
-        // }
+        stage('Report allure') {
+            steps {
+                allure([
+                    reportBuildPolicy: 'ALWAYS',
+                    results: [[path: 'src/allure-results']]
+                ])
+            }
+        }
 
         stage('Archive Artifact') {
             steps {
