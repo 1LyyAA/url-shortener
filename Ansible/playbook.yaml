@@ -13,22 +13,12 @@
         owner: admin
         group: admin
         mode: '0755'
-        
-    - name: Install rsync
-      become: true
-      package:
-        name: rsync
-        state: present
 
     - name: Copy application files
-      synchronize:
-        src: "{{ playbook_dir }}/../"
+      copy:
+        src: "{{ playbook_dir }}/../app/"
         dest: "{{ app_dir }}/"
-        delete: yes
-        rsync_opts:
-          - "--exclude=.git"
-          - "--exclude=Ansible"
-          - "--exclude=jenkins"
+        mode: '0755'
 
     - name: Set executable permissions
       file:
