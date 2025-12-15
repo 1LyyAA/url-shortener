@@ -13,6 +13,12 @@
         owner: admin
         group: admin
         mode: '0755'
+        
+    - name: Install rsync
+      become: true
+      package:
+        name: rsync
+        state: present
 
     - name: Copy application files
       synchronize:
