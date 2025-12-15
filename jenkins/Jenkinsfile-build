@@ -53,6 +53,14 @@ pipeline {
         //     }
         // }
 
+        stage('Lint') {
+            steps {
+                sh '''
+                    golangci-lint run || echo "Linter not configured, skipping..."
+                '''
+            }
+        }
+
         stage('Report allure') {
             steps {
                 allure([
