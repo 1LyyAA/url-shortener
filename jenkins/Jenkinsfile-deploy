@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'BUILD_NUMBER', defaultValue: '1', description: 'Build number to deploy from Nexus')
+    }
+
+    environment {
+        NEXUS_URL = 'http://nexus:8081'
+        NEXUS_REPO = 'go-artifacts'
+        NEXUS_CREDENTIALS_ID = 'nexus_cred'
+        ARTIFACT_NAME = 'app.tar.gz'
+        APP_DIR = '/opt/go-app'
+    }
+
+    stages {
+
+        stage('Download from Nexus') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: "${NEXUS_CREDENTIALS_ID}",
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    sh '''
+                        curl -u $NEXUS_USER:$NEXUS_PASS \
+                        -o ${ARTIFACT_NAME} \
+                        ${NEXUS_URL}/repository/${NEXUS_REPO}/app-${BUILD_NUMBER}.tar.gz
+                    '''
+                }
+            }
+        }
+
+        stage('Extract Artifact') {
+            steps {
+                sh '''
+                    tar -xzf ${ARTIFACT_NAME}
+                '''
+            }
+        }
+
+        stage('Git clone ansible') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/1LyyAA/url-shortener.git'
+            }
+        }
+
+        stage('Run ansible') {
+            steps {
+                sh '''
+                    ansible-playbook ansible/playbook.yml \
+                    -i ansible/inventory \
+                    --extra-vars "app_dir=${APP_DIR}"
+                '''
+            }
+        }
+    }
+}

@@ -1,0 +1,36 @@
+---
+
+- name: Deploy url-shortener 
+  hosts: app-server
+  become: true
+  vars:
+    app_dir: /opt/go-app
+  tasks:
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: admin
+        group: admin
+        mode: '0755'
+
+    - name: Copy application files
+      synchronize:
+        src: "{{ playbook_dir }}/../"
+        dest: "{{ app_dir }}/"
+        delete: yes
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=Ansible"
+          - "--exclude=jenkins"
+
+    - name: Set executable permissions
+      file:
+        path: "{{ app_dir }}/app"
+        mode: '0755'
+        
+    - name: Run application
+      shell: nohup {{ app_dir }}/app </dev/null >/dev/null 2>&1 &
+      args:
+        chdir: "{{ app_dir }}"
+
