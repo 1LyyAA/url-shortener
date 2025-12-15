@@ -49,8 +49,9 @@ pipeline {
         stage('Run ansible') {
             steps {
                 sh '''
-                    ansible-playbook ansible/playbook.yml \
-                    -i ansible/inventory \
+                    cd Ansible
+                    ansible-playbook playbook.yaml \
+                    -i lab.hosts \
                     --extra-vars "app_dir=${APP_DIR}"
                 '''
             }
