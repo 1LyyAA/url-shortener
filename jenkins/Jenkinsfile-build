@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         // Явно устанавливаем переменные окружения
-        NEXUS_URL = 'http://localhost:8081'
+        NEXUS_URL = 'http://nexus:8081'
         NEXUS_REPO = 'go-artifacts'
         NEXUS_CREDENTIALS_ID = 'nexus_cred'
         PATH = "/usr/local/go/bin:${env.PATH}"
